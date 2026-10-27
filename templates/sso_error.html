@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+  <div class="row justify-content-center">
+    <div class="col-md-8">
+      <div class="card">
+        <div class="card-header">Single Sign-On Error</div>
+        <div class="card-body">
+          <p class="text-danger">{{ error }}</p>
+          <a href="/" class="btn btn-primary">Return to site</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

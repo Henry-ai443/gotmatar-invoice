@@ -1,0 +1,250 @@
+{% extends 'base.html' %}
+{% load widget_tweaks %}
+
+
+{% block title %}
+
+{% if object %}
+Update invoice {{ object }}
+{% else %}
+Add new invoice
+{% endif %}
+
+{% endblock title %}
+
+
+{% block content %}
+
+<form method="POST">
+  {% csrf_token %}
+
+  <div class="row">
+    <div class="col-sm-6">
+      {% for field in form %}
+      <div class="form-group row">
+        <label class="col col-form-label" for="{{ field.auto_id }}">
+          {{ field.label }}
+          {% for error in field.errors %}
+          <small id="{{ field.auto_id }}" class="text-danger">{{ error }}</small>
+          {% endfor %}
+        </label>
+        <div class="col">
+          {% if field.name == "student" %}
+            {{ field.as_hidden }}
+            <div class="student-autocomplete" data-search-url="{{ student_search_url }}">
+              <input type="search" id="student-search-input" class="form-control" value="{{ selected_student_label }}" autocomplete="off" aria-autocomplete="list" aria-controls="student-search-results" aria-expanded="false" placeholder="Search by student name or registration number">
+              <div id="student-search-status" class="small text-muted mt-1" role="status" aria-live="polite">Type a name or registration number to search.</div>
+              <ul id="student-search-results" class="list-group mt-1" role="listbox" hidden></ul>
+            </div>
+          {% else %}
+            {{ field | add_class:"form-control"}}
+          {% endif %}
+          {% if field.help_text %}
+          <small>{{ field.help_text|safe }}</small>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    <div class="col-sm-6 callout callout-info">
+      {{ items.management_form }}
+      <div class="text-center">FEE STRUCTURE</div>
+      <div class="row">
+        <div class="col"><strong>Fee Type</strong></div>
+        <div class="col"><strong>Amount</strong></div>
+        <div class="col"><strong>Vote Head *</strong></div>
+      </div>
+      {% for item in items %}
+      <div class="form-group row items-group">
+        {{ item.id}}
+        <div class="col">{{ item.description | add_class:"form-control"}}</div>
+        <div class="col">{{ item.amount | add_class:"form-control"}}</div>
+        <div class="col">
+          {{ item.vote_head | add_class:"form-control"}}
+          {% for error in item.vote_head.errors %}
+          <small class="text-danger">{{ error }}</small>
+          {% endfor %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+
+  {% if object %}
+    <h4>RECEIPTS</h4>
+    <table class="table table-sm">
+      {{ receipts.management_form }}
+      <thead class="thead-light">
+        <tr>
+          <th>Amount Paid</th>
+          <th>Date Paid</th>
+          <th>Comment</th>
+          <th><i class="fa fa-trash"></i></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for receipt in receipts %}
+        {% for hidden in receipt.hidden_fields %}
+        {{ hidden }}
+        {% endfor %}
+        <tr>
+          {% for field in receipt.visible_fields %}
+          <td>{{ field | add_class:"form-control form-control-sm"}}</td>
+          {% endfor %}
+        </tr>
+        {% endfor %}
+
+      </tbody>
+    </table>
+  {% endif %}
+
+  {% if object %}
+  <input type="submit" class="btn btn-primary" value="Update Record">
+  {% else %}
+  <input type="submit" class="btn btn-primary" value="Add new invoice">
+  {% endif %}
+</form>
+
+<hr>
+
+
+{% endblock content %}
+
+{% block morejs %}
+<script>
+  (function () {
+    const container = document.querySelector('.student-autocomplete');
+    if (!container) return;
+
+    const input = document.getElementById('student-search-input');
+    const studentId = document.getElementById('id_student');
+    const results = document.getElementById('student-search-results');
+    const status = document.getElementById('student-search-status');
+    let debounceTimer;
+    let activeRequest;
+    let activeIndex = -1;
+
+    function closeResults(message) {
+      results.replaceChildren();
+      results.hidden = true;
+      input.setAttribute('aria-expanded', 'false');
+      activeIndex = -1;
+      status.textContent = message;
+    }
+
+    function chooseStudent(student) {
+      studentId.value = student.id;
+      input.value = student.label;
+      closeResults('Selected student.');
+    }
+
+    function renderResults(students) {
+      results.replaceChildren();
+      if (!students.length) {
+        closeResults('No matching students found.');
+        return;
+      }
+
+      students.forEach((student) => {
+        const option = document.createElement('li');
+        option.className = 'list-group-item list-group-item-action';
+        option.setAttribute('role', 'option');
+        option.tabIndex = -1;
+        option.dataset.studentId = student.id;
+        option.textContent = [
+          student.name,
+          student.registration_number,
+          student.class_name
+        ].filter(Boolean).join(' | ');
+        option.addEventListener('click', () => chooseStudent({
+          id: student.id,
+          label: option.textContent
+        }));
+        results.appendChild(option);
+      });
+      results.hidden = false;
+      input.setAttribute('aria-expanded', 'true');
+      status.textContent = `${students.length} matching student${students.length === 1 ? '' : 's'}.`;
+      activeIndex = -1;
+    }
+
+    async function searchStudents(query) {
+      if (activeRequest) activeRequest.abort();
+      activeRequest = new AbortController();
+      status.textContent = 'Searching students...';
+
+      try {
+        const url = new URL(container.dataset.searchUrl, window.location.origin);
+        url.searchParams.set('q', query);
+        const response = await fetch(url, {
+          headers: { 'Accept': 'application/json' },
+          signal: activeRequest.signal
+        });
+        if (!response.ok) throw new Error('Student search failed');
+        const data = await response.json();
+        renderResults(data.results || []);
+      } catch (error) {
+        if (error.name !== 'AbortError') {
+          closeResults('Student search failed. Please try again.');
+        }
+      }
+    }
+
+    input.addEventListener('input', () => {
+      studentId.value = '';
+      clearTimeout(debounceTimer);
+      if (activeRequest) activeRequest.abort();
+      const query = input.value.trim();
+      if (!query) {
+        closeResults('Type a name or registration number to search.');
+        return;
+      }
+      status.textContent = 'Waiting to search...';
+      debounceTimer = setTimeout(() => searchStudents(query), 250);
+    });
+
+    input.addEventListener('keydown', (event) => {
+      const options = Array.from(results.querySelectorAll('[role="option"]'));
+      if (event.key === 'ArrowDown' && options.length) {
+        event.preventDefault();
+        activeIndex = (activeIndex + 1) % options.length;
+        options[activeIndex].focus();
+      } else if (event.key === 'Escape') {
+        closeResults('');
+      } else if (event.key === 'Enter' && options.length) {
+        event.preventDefault();
+        const option = options[activeIndex < 0 ? 0 : activeIndex];
+        chooseStudent({ id: option.dataset.studentId, label: option.textContent });
+        input.focus();
+      }
+    });
+
+    results.addEventListener('keydown', (event) => {
+      const options = Array.from(results.querySelectorAll('[role="option"]'));
+      const currentIndex = options.indexOf(document.activeElement);
+      if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+        event.preventDefault();
+        const direction = event.key === 'ArrowDown' ? 1 : -1;
+        activeIndex = (currentIndex + direction + options.length) % options.length;
+        options[activeIndex].focus();
+      } else if (event.key === 'Enter' && currentIndex >= 0) {
+        event.preventDefault();
+        options[currentIndex].click();
+        input.focus();
+      } else if (event.key === 'Escape') {
+        closeResults('');
+        input.focus();
+      }
+    });
+  })();
+
+  $(".items-group").formset(
+    {
+      prefix: '{{ items.prefix }}',
+      deleteText: "<div class='btn btn-danger btn-circle'><i class='fas fa-trash'></i></div>",
+      addText: "<div class='btn btn-success btn-circle'><i class='fas fa-plus'></i></div>"
+    }
+  )
+</script>
+{% endblock morejs %}

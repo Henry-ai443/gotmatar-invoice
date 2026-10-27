@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+
+{% block title %}VoteHead Report{% endblock title %}
+
+{% block content %}
+  <h3>Report for {{ vote_head }}</h3>
+  <a class="btn btn-secondary" href="{% url 'votehead-report-pdf' %}?vote_head_id={{ vote_head.id }}{% if request.GET.date_from %}&date_from={{ request.GET.date_from }}{% endif %}{% if request.GET.date_to %}&date_to={{ request.GET.date_to }}{% endif %}">Download PDF</a>
+  <h4>Income Entries</h4>
+  <table class="table table-sm">
+    <thead><tr><th>Date</th><th>Amount</th><th>Description</th></tr></thead>
+    <tbody>
+      {% for inc in incomes %}
+      <tr><td>{{ inc.date }}</td><td>{{ inc.amount }}</td><td>{{ inc.description }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <h4>Fee Receipts</h4>
+  <h4>Fee Allocations</h4>
+  <table class="table table-sm">
+    <thead><tr><th>Date</th><th>Amount</th><th>Invoice</th></tr></thead>
+    <tbody>
+      {% for a in allocations %}
+      <tr><td>{{ a.receipt.date_paid }}</td><td>{{ a.amount }}</td><td>{{ a.receipt.invoice_id }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <h4>Receipts touching this Vote Head (Unallocated shown)</h4>
+  <table class="table table-sm">
+    <thead><tr><th>Date</th><th>Amount</th><th>Invoice</th><th>Unallocated</th></tr></thead>
+    <tbody>
+      {% for row in unallocated_list %}
+      <tr><td>{{ row.receipt.date_paid }}</td><td>{{ row.receipt.amount_paid }}</td><td>{{ row.receipt.invoice_id }}</td><td>{{ row.unallocated }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <p><strong>Income Total:</strong> {{ income_total }}</p>
+  <p><strong>Fee Allocated Total:</strong> {{ allocation_total }}</p>
+  <p><strong>Original Receipt Amount (Context Only):</strong> {{ receipt_total }}</p>
+  <p>This is the original receipt amount. It is shown for context only and is not the amount attributed to this VoteHead.</p>
+{% endblock content %}

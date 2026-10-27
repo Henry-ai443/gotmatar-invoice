@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% load widget_tweaks %}
+
+{% block title %}
+Income Entries
+{% endblock title %}
+
+{% block content %}
+  <div class="row">
+    <div class="col-sm-12">
+        <a class="btn btn-primary" href="{% url 'income-create' %}">Add Income</a>
+        <table class="table table-bordered mt-3">
+          <thead><tr><th>Date</th><th>Vote Head</th><th>Amount</th><th>Description</th></tr></thead>
+            <thead><tr><th>Date</th><th>Vote Head</th><th>Amount</th><th>Description</th><th>Source</th><th>Actions</th></tr></thead>
+          <tbody>
+            {% for inc in object_list %}
+            <tr>
+              <td>{{ inc.date }}</td>
+              <td>{{ inc.vote_head }}</td>
+              <td>{{ inc.amount }}</td>
+              <td>{{ inc.description }}</td>
+              <td>{{ inc.source }}</td>
+              <td class="text-nowrap">
+                <a class="btn btn-sm btn-primary" href="{% url 'income-update' inc.pk %}">Edit</a>
+                <a class="btn btn-sm btn-danger" href="{% url 'income-delete' inc.pk %}">Delete</a>
+              </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="6">No income records found.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+    </div>
+  </div>
+{% endblock content %}

@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% block title %}Expense Category Report{% endblock title %}
+
+{% block content %}
+  <h3>Report for {{ category }}</h3>
+  <h4>Expenses</h4>
+  <table class="table table-sm">
+    <thead><tr><th>Date</th><th>Amount</th><th>Description</th><th>Payee</th></tr></thead>
+    <tbody>
+      {% for e in expenses %}
+      <tr><td>{{ e.date }}</td><td>{{ e.amount }}</td><td>{{ e.description }}</td><td>{{ e.payee }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <p><strong>Total:</strong> {{ expense_total }}</p>
+{% endblock content %}

@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}Edit Allocation{% endblock %}
+
+{% block content %}
+<div class="container">
+  <h3>Edit Allocation</h3>
+  <form method="post">{% csrf_token %}
+    {{ form.as_p }}
+    <button class="btn btn-primary">Save</button>
+    <a href="{{ object.receipt.get_absolute_url }}" class="btn btn-secondary">Back</a>
+  </form>
+</div>
+{% endblock %}

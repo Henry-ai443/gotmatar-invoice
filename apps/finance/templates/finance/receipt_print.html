@@ -1,0 +1,167 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}Receipt {{ receipt.id }}{% endblock title %}
+
+{% block content %}
+<style media="print">
+  .no-print,
+  .navbar,
+  .sidebar,
+  .footer,
+  .main-sidebar,
+  .btn,
+  .btn-tool {
+    display: none !important;
+  }
+
+  body {
+    background: #fff;
+    color: #000;
+    margin: 0;
+    font-family: Arial, sans-serif;
+  }
+
+  .receipt-print-shell {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 32px;
+  }
+
+  .receipt-print-shell table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .receipt-print-shell th,
+  .receipt-print-shell td {
+    border: 1px solid #333;
+    padding: 8px;
+    text-align: left;
+  }
+</style>
+
+<style>
+  .receipt-print-shell {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 30px;
+    background: #fff;
+  }
+
+  .receipt-header {
+    border-bottom: 2px solid #333;
+    padding-bottom: 12px;
+    margin-bottom: 24px;
+  }
+
+  .receipt-meta {
+    margin-top: 12px;
+  }
+
+  .receipt-actions {
+    margin-bottom: 18px;
+  }
+</style>
+
+<div class="receipt-print-shell">
+  <div class="receipt-header text-center">
+    <h2><strong>Got Matar Institute of Technology</strong></h2>
+    <h4>Student Receipt</h4>
+  </div>
+
+  <div class="receipt-actions no-print">
+    <a href="javascript:window.print()" class="btn btn-primary"><i class="fas fa-print"></i> Print Receipt</a>
+    <a href="{% url 'receipt-pdf' receipt.pk %}" class="btn btn-secondary"><i class="fas fa-download"></i> Download PDF</a>
+    {% if receipt.unallocated_amount > 0 %}
+    <a href="{% url 'receipt-allocate' receipt.pk %}" class="btn btn-info"><i class="fas fa-box"></i> Allocate Payment</a>
+    {% endif %}
+  </div>
+
+  <div class="row receipt-meta">
+    <div class="col-md-6">
+      <p><strong>Receipt Number:</strong> {{ receipt.id }}</p>
+      <p><strong>Date Paid:</strong> {{ receipt.date_paid }}</p>
+      <p><strong>Amount Paid:</strong> {{ receipt.amount_paid|intcomma }}</p>
+      <p><strong>Comment:</strong> {{ receipt.comment }}</p>
+      <p><strong>Payment Method:</strong>
+        {% if receipt.payment_method %}
+          {{ receipt.get_payment_method_display }}
+        {% else %}
+          Not specified
+        {% endif %}
+      </p>
+      <p><strong>Reference Number:</strong>
+        {% if receipt.reference_number %}
+          {{ receipt.reference_number }}
+        {% else %}
+          Not provided
+        {% endif %}
+      </p>
+    </div>
+    <div class="col-md-6">
+      <p><strong>Student:</strong> {{ invoice.student.surname }} {{ invoice.student.firstname }} {{ invoice.student.other_name }}</p>
+      <p><strong>Registration Number:</strong> {{ invoice.student.registration_number }}</p>
+      <p><strong>Session:</strong> {{ invoice.session }}</p>
+      <p><strong>Term:</strong> {{ invoice.term }}</p>
+      <p><strong>Class:</strong> {{ invoice.class_for }}</p>
+    </div>
+  </div>
+
+  <hr>
+
+  <table class="table table-bordered">
+    <tbody>
+      <tr>
+        <th>Invoice Total</th>
+        <td>{{ invoice.total_amount_payable|intcomma }}</td>
+      </tr>
+      <tr>
+        <th>Invoice Total Paid</th>
+        <td>{{ invoice.total_amount_paid|intcomma }}</td>
+      </tr>
+      <tr>
+        <th>Balance Remaining After This Payment</th>
+        <td>{{ invoice.balance|intcomma }}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h4>Payment Allocation</h4>
+  <table class="table table-bordered">
+    <thead>
+      <tr>
+        <th>Vote Head</th>
+        <th>Description</th>
+        <th>Amount</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for alloc in receipt.allocations.all %}
+      <tr>
+        <td>{% if alloc.invoice_item.vote_head %}{{ alloc.invoice_item.vote_head.name }}{% else %}-{% endif %}</td>
+        <td>{{ alloc.invoice_item.description }}</td>
+        <td>{{ alloc.amount|intcomma }}</td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="3">No allocations for this receipt</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <table class="table table-bordered">
+    <tbody>
+      <tr>
+        <th>Total Allocated</th>
+        <td>{{ receipt.allocated_total|intcomma }}</td>
+      </tr>
+      <tr>
+        <th>Unallocated</th>
+        <td>{{ receipt.unallocated_amount|intcomma }}</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+{% endblock content %}

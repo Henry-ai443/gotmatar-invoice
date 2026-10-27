@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+{% block title %}Summary Report{% endblock title %}
+
+{% block content %}
+  <h3>Combined Summary</h3>
+  <h4>Income by Vote Head</h4>
+  <table class="table table-sm">
+    <thead><tr><th>Vote Head</th><th>Total</th></tr></thead>
+    <tbody>
+      {% for row in income_by_vh %}
+      <tr><td>{{ row.vote_head__name }}</td><td>{{ row.total }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <h4>Fee Receipts by Vote Head</h4>
+  <table class="table table-sm">
+    <thead><tr><th>Vote Head</th><th>Total</th></tr></thead>
+    <tbody>
+      {% for row in fee_receipts %}
+      <tr><td>{{ row.vote_head__name }}</td><td>{{ row.total }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <h4>Unallocated Fee Receipts</h4>
+  <table class="table table-sm">
+    <thead><tr><th>Receipt</th><th>Date</th><th>Amount Unallocated</th><th>Invoice</th></tr></thead>
+    <tbody>
+      {% for row in unallocated_rows %}
+      <tr>
+        <td>{{ row.receipt.id }}</td>
+        <td>{{ row.receipt.date_paid }}</td>
+        <td>{{ row.unallocated }}</td>
+        <td>{{ row.receipt.invoice_id }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="4">No unallocated fee receipts</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <h4>Expenses by Category</h4>
+  <table class="table table-sm">
+    <thead><tr><th>Category</th><th>Total</th></tr></thead>
+    <tbody>
+      {% for row in expense_by_cat %}
+      <tr><td>{{ row.category__name }}</td><td>{{ row.total }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <p><strong>Total Income:</strong> {{ total_income }}</p>
+  <p><strong>Total Allocated Fee Receipts:</strong> {{ alloc_total }}</p>
+  <p><strong>Total Unallocated Fee Receipts:</strong> {{ unalloc_total }}</p>
+  <p><strong>Total Fee Receipts:</strong> {{ total_fee_receipts }}</p>
+  <p><strong>Total Expenses:</strong> {{ total_expenses }}</p>
+  <p><strong>Net:</strong> {{ net }}</p>
+{% endblock content %}
